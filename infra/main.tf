@@ -113,3 +113,11 @@ resource "aws_lambda_event_source_mapping" "lambda_create_thumbnail_sqs" {
   function_name = aws_lambda_function.create_thumbnail.function_name
   batch_size = 10
 }
+
+resource "aws_lambda_permission" "upload" {
+  statement_id = "AllowLambdaUploadInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.create_thumbnail.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn = "${aws_api_gateway_rest_api.image_upload.execution_arn}/*"
+}
