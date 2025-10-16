@@ -43,7 +43,7 @@ resource "aws_subnet" "private" {
   }
 }
 
-resource "aws_iam_role" "lambda_create_thumbnail" {
+resource "aws_iam_role" "lambda_upload" {
   name = "lambda_create_thumbnail"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -61,63 +61,91 @@ resource "aws_iam_role" "lambda_create_thumbnail" {
 
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  role       = aws_iam_role.lambda_create_thumbnail.name
+  role       = aws_iam_role.lambda_upload.name
 }
 
-resource "aws_iam_role_policy" "lambda_create_thumbnail_bucket_queue" {
+resource "aws_iam_role_policy" "lambda_upload_s3" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject"]
+        Action   = ["s3:PutObject"]
         Resource = "${aws_s3_bucket.images.arn}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
-        Resource = aws_sqs_queue.create_thumbnail.arn
       }
     ]
   })
-  role = aws_iam_role.lambda_create_thumbnail.name
+  role = aws_iam_role.lambda_upload.name
 }
 
-data "archive_file" "lambda_create_thumbnail" {
-  source_dir = "${path.module}/../lambda/create_thumbnail"
+data "archive_file" "lambda_upload" {
+  source_dir  = "${path.module}/../lambda/create_thumbnail/dist"
   output_path = "${path.module}/lambda_create_thumbnail.zip"
   type        = "zip"
 }
 
-resource "aws_lambda_function" "create_thumbnail" {
-  function_name = "create_thumbnail"
-  role          = aws_iam_role.lambda_create_thumbnail.arn
+resource "aws_lambda_function" "upload" {
+  function_name = "upload"
+  role          = aws_iam_role.lambda_upload.arn
 
-  filename = data.archive_file.lambda_create_thumbnail.output_path
+  filename = data.archive_file.lambda_upload.output_path
   handler = "index.handler"
-  source_code_hash = data.archive_file.lambda_create_thumbnail.output_base64sha256
+  source_code_hash = data.archive_file.lambda_upload.output_base64sha256
   runtime = "nodejs20.x"
   memory_size = 512
+
+  environment {
+    variables = {
+      "BUCKET_NAME" = aws_s3_bucket.images.bucket
+    }
+  }
 }
 
 resource "aws_sqs_queue" "create_thumbnail" {
   name   = "create_thumbnail"
 }
 
+resource "aws_sqs_queue_policy" "create_thumbnail_policy" {
+  queue_url = aws_sqs_queue.create_thumbnail.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.create_thumbnail.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_s3_bucket.images.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_s3_bucket" "images" {
   bucket = "guikaua12-image-pipeline-s3-images-bucket"
 }
 
-resource "aws_lambda_event_source_mapping" "lambda_create_thumbnail_sqs" {
-  event_source_arn = aws_sqs_queue.create_thumbnail.arn
-  function_name = aws_lambda_function.create_thumbnail.function_name
-  batch_size = 10
+resource "aws_s3_bucket_notification" "images_s3_notification" {
+  bucket = aws_s3_bucket.images.id
+
+  queue {
+    events = ["s3:ObjectCreated:Put"]
+    queue_arn = aws_sqs_queue.create_thumbnail.arn
+    filter_prefix = "uploads/"
+  }
 }
 
 resource "aws_lambda_permission" "upload" {
   statement_id = "AllowLambdaUploadInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.create_thumbnail.function_name
+  function_name = aws_lambda_function.upload.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn = "${aws_api_gateway_rest_api.image_upload.execution_arn}/*"
 }
