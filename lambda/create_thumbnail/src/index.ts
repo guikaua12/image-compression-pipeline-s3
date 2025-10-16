@@ -5,7 +5,7 @@ import {z, ZodError} from "zod";
 import {env} from "./env"
 import { v4 as uuidv4 } from 'uuid';
 
-const s3Client = new S3Client({ region: env.AWS_REGION || 'us-east-1' });
+const s3Client = new S3Client({ region: env.aws_region || 'us-east-1' });
 
 const uploadRequestSchema = z.object({
   fileName: z.string().max(255),
@@ -27,10 +27,10 @@ interface UploadResponse {
 async function generatePresignedUrl({fileName, fileType}: UploadRequest): Promise<UploadResponse> {
   const timestamp = Date.now();
   const normalizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const key = `uploads/${timestamp}-${uuidv4()}-${normalizedFileName}`;
+  const key = `${env.raw_bucket_prefix}/${timestamp}-${uuidv4()}-${normalizedFileName}`;
 
   const command = new PutObjectCommand({
-    Bucket: env.BUCKET_NAME,
+    Bucket: env.bucket_name,
     Key: key,
     ContentType: fileType,
   });

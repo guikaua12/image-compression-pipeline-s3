@@ -4,9 +4,9 @@
   "description": "Lambda function to create image thumbnails",
   "main": "dist/index.js",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap",
-    "build:prod": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --outfile=dist/index.js",
-    "watch": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap --watch",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap --external:@aws-sdk/*",
+    "build:prod": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
+    "watch": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap --watch --external:@aws-sdk/*",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

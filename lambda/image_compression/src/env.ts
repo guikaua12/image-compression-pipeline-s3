@@ -1,12 +1,12 @@
 interface Environment {
-    bucket_name: string;
     raw_bucket_prefix: string;
+    compressed_bucket_prefix: string;
     aws_region: string;
 }
 
 const partialEnv: Partial<Environment> = {
-    bucket_name: process.env.BUCKET_NAME,
     raw_bucket_prefix: process.env.RAW_BUCKET_PREFIX,
+    compressed_bucket_prefix: process.env.COMPRESSED_BUCKET_PREFIX,
     aws_region: process.env.AWS_REGION,
 };
 
