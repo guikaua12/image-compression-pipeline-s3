@@ -22,14 +22,14 @@ resource "aws_api_gateway_resource" "presign" {
 
 resource "aws_api_gateway_method" "upload" {
   rest_api_id   = aws_api_gateway_rest_api.image_upload.id
-  resource_id   = aws_api_gateway_resource.upload.id
+  resource_id   = aws_api_gateway_resource.presign.id
   http_method   = "POST"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "upload" {
   rest_api_id             = aws_api_gateway_rest_api.image_upload.id
-  resource_id             = aws_api_gateway_resource.upload.id
+  resource_id             = aws_api_gateway_resource.presign.id
   http_method             = aws_api_gateway_method.upload.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
@@ -43,7 +43,9 @@ resource "aws_api_gateway_deployment" "upload" {
     redeployment = sha1(jsonencode([
       aws_api_gateway_integration.upload.id,
       aws_api_gateway_method.upload.id,
-      aws_api_gateway_resource.upload.id
+      aws_api_gateway_resource.images.id,
+      aws_api_gateway_resource.upload.id,
+      aws_api_gateway_resource.presign.id
     ]))
   }
 
