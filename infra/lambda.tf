@@ -108,6 +108,13 @@ resource "aws_iam_role_policy" "lambda_image_compression" {
           "sqs:GetQueueAttributes",
         ]
         Resource = aws_sqs_queue.create_thumbnail.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem"
+        ]
+        Resource = aws_dynamodb_table.image_metadata.arn
       }
     ]
   })
@@ -136,6 +143,7 @@ resource "aws_lambda_function" "image_compression" {
     variables = {
       "RAW_BUCKET_PREFIX"        = var.raw_bucket_prefix
       "COMPRESSED_BUCKET_PREFIX" = var.compressed_bucket_prefix
+      "DYNAMODB_TABLE_NAME"      = aws_dynamodb_table.image_metadata.name
     }
   }
 }

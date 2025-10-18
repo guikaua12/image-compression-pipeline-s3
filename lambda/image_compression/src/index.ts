@@ -1,9 +1,12 @@
 import {S3Event, S3EventRecord, SQSBatchItemFailure, SQSBatchResponse, SQSEvent} from 'aws-lambda';
 import {S3Client, PutObjectCommand, GetObjectCommand} from '@aws-sdk/client-s3';
+import {DynamoDBClient, PutItemCommand} from '@aws-sdk/client-dynamodb';
 import {env} from "./env"
 import sharp from "sharp";
+import {v4 as uuidv4} from 'uuid';
 
 const s3Client = new S3Client({ region: env.aws_region });
+const dynamoDBClient = new DynamoDBClient({ region: env.aws_region });
 
 const processS3EventRecord = async (record: S3EventRecord) => {
   const bucket = record.s3.bucket.name;
@@ -17,6 +20,9 @@ const processS3EventRecord = async (record: S3EventRecord) => {
 
   const originalImage = await s3Client.send(command);
 
+  const id = originalImage.Metadata?.id || uuidv4();
+  const uploadedAt = originalImage.LastModified?.toISOString() || new Date().toISOString();
+
   const compressedBuffer = await sharp(await originalImage.Body?.transformToByteArray())
       .jpeg({ quality: 30 })
       .toBuffer();
@@ -28,7 +34,19 @@ const processS3EventRecord = async (record: S3EventRecord) => {
     ContentType: "image/jpeg"
   });
 
-  await s3Client.send(putCommand)
+  await s3Client.send(putCommand);
+
+  const putItemCommand = new PutItemCommand({
+    TableName: env.dynamodb_table_name,
+    Item: {
+      id: { S: id },
+      uploaded_at: { S: uploadedAt },
+      raw_object_key: { S: key },
+      compressed_object_key: { S: newKey }
+    }
+  });
+
+  await dynamoDBClient.send(putItemCommand);
 }
 
 export const handler = async (

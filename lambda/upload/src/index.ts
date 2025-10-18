@@ -20,19 +20,24 @@ const uploadRequestSchema = z.object({
 type UploadRequest = z.infer<typeof uploadRequestSchema>
 
 interface UploadResponse {
+  imageId: string;
   uploadUrl: string;
   expiresIn: number;
 }
 
 async function generatePresignedUrl({fileName, fileType}: UploadRequest): Promise<UploadResponse> {
   const timestamp = Date.now();
+  const imageId = uuidv4();
   const normalizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-  const key = `${env.raw_bucket_prefix}/${timestamp}-${uuidv4()}-${normalizedFileName}`;
+  const key = `${env.raw_bucket_prefix}/${timestamp}-${imageId}-${normalizedFileName}`;
 
   const command = new PutObjectCommand({
     Bucket: env.bucket_name,
     Key: key,
     ContentType: fileType,
+    Metadata: {
+      id: imageId
+    }
   });
 
   const expiresIn = 3600;
@@ -42,6 +47,7 @@ async function generatePresignedUrl({fileName, fileType}: UploadRequest): Promis
   });
 
   return {
+    imageId,
     uploadUrl,
     expiresIn
   };
