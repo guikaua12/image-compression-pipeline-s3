@@ -74,6 +74,30 @@ resource "aws_s3_bucket" "images" {
   bucket = "guikaua12-image-pipeline-s3-images-bucket"
 }
 
+resource "aws_s3_bucket_policy" "images" {
+  bucket = aws_s3_bucket.images.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.images.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.images.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_s3_bucket_notification" "images_s3_notification" {
   bucket = aws_s3_bucket.images.id
 
