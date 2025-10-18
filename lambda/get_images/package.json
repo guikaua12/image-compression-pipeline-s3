@@ -1,0 +1,23 @@
+{
+  "name": "get-images",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap --external:@aws-sdk/*",
+    "build:prod": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
+    "watch": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap --watch --external:@aws-sdk/*",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.908.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.17.9",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

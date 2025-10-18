@@ -36,6 +36,22 @@ resource "aws_api_gateway_integration" "upload" {
   uri                     = aws_lambda_function.upload.invoke_arn
 }
 
+resource "aws_api_gateway_method" "get_images" {
+  rest_api_id   = aws_api_gateway_rest_api.image_upload.id
+  resource_id   = aws_api_gateway_resource.images.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "get_images" {
+  rest_api_id             = aws_api_gateway_rest_api.image_upload.id
+  resource_id             = aws_api_gateway_resource.images.id
+  http_method             = aws_api_gateway_method.get_images.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_images.invoke_arn
+}
+
 resource "aws_api_gateway_deployment" "upload" {
   rest_api_id = aws_api_gateway_rest_api.image_upload.id
 
@@ -43,6 +59,8 @@ resource "aws_api_gateway_deployment" "upload" {
     redeployment = sha1(jsonencode([
       aws_api_gateway_integration.upload.id,
       aws_api_gateway_method.upload.id,
+      aws_api_gateway_integration.get_images.id,
+      aws_api_gateway_method.get_images.id,
       aws_api_gateway_resource.images.id,
       aws_api_gateway_resource.upload.id,
       aws_api_gateway_resource.presign.id

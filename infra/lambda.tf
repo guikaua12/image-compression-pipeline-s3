@@ -153,3 +153,73 @@ resource "aws_lambda_event_source_mapping" "lambda_image_compression_sqs" {
   event_source_arn = aws_sqs_queue.create_thumbnail.arn
   batch_size       = 10
 }
+
+// get images lambda
+resource "aws_iam_role" "lambda_get_images" {
+  name = "lambda_get_images"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "sts:AssumeRole"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_get_images_basic_execution" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.lambda_get_images.name
+}
+
+resource "aws_iam_role_policy" "lambda_get_images" {
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan"
+        ]
+        Resource = aws_dynamodb_table.image_metadata.arn
+      }
+    ]
+  })
+  role = aws_iam_role.lambda_get_images.name
+}
+
+data "archive_file" "lambda_get_images" {
+  source_dir  = "${path.module}/../lambda/get_images/dist"
+  output_path = "${path.module}/lambda_get_images.zip"
+  type        = "zip"
+}
+
+resource "aws_lambda_function" "get_images" {
+  function_name = "get_images"
+  role          = aws_iam_role.lambda_get_images.arn
+
+  filename         = data.archive_file.lambda_get_images.output_path
+  handler          = "index.handler"
+  source_code_hash = data.archive_file.lambda_get_images.output_base64sha256
+  runtime          = "nodejs20.x"
+  memory_size      = 512
+
+  environment {
+    variables = {
+      "DYNAMODB_TABLE_NAME"      = aws_dynamodb_table.image_metadata.name
+      "CLOUDFRONT_DOMAIN_NAME"   = aws_cloudfront_distribution.images.domain_name
+    }
+  }
+}
+
+resource "aws_lambda_permission" "get_images" {
+  statement_id  = "AllowLambdaGetImagesInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_images.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.image_upload.execution_arn}/*"
+}
