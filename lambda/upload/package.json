@@ -1,7 +1,6 @@
 {
-  "name": "create-thumbnail",
+  "name": "upload",
   "version": "1.0.0",
-  "description": "Lambda function to create image thumbnails",
   "main": "dist/index.js",
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap --external:@aws-sdk/*",
