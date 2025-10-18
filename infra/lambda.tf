@@ -35,8 +35,8 @@ resource "aws_iam_role_policy" "lambda_upload_s3" {
 }
 
 data "archive_file" "lambda_upload" {
-  source_dir  = "${path.module}/../lambda/create_thumbnail/dist"
-  output_path = "${path.module}/lambda_create_thumbnail.zip"
+  source_dir  = "${path.module}/../lambda/upload/dist"
+  output_path = "${path.module}/lambda_upload.zip"
   type        = "zip"
 }
 
