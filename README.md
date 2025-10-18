@@ -22,26 +22,6 @@ O funcionamento é todo baseado em eventos, conectando diversos serviços da AWS
 
 ---
 
-### Tecnologias Utilizadas
-
-#### **Serviços AWS**
-- **S3** – Armazenamento principal para imagens originais e otimizadas  
-- **Lambda** – Execução das funções de upload, compressão e listagem  
-- **API Gateway** – Interface REST para comunicação com os serviços  
-- **CloudFront** – CDN para entrega rápida de conteúdo  
-- **DynamoDB** – Banco de dados NoSQL para metadados  
-- **SQS** – Fila de mensagens para o processamento assíncrono
-
-#### **Infraestrutura**
-- **Terraform** – Provisionamento completo da infraestrutura AWS como código  
-
-#### **Desenvolvimento**
-- **TypeScript** – Linguagem principal das funções Lambda
-- **Sharp** – Biblioteca de processamento e compressão de imagens  
-- **AWS SDK v3** – Cliente modular para integração com os serviços AWS  
-
----
-
 ### Como rodar
 
 #### **Pré-requisitos**
@@ -87,3 +67,23 @@ Esses endpoints permitem o envio, listagem e visualização de imagens processad
 |--------|---------------------------|--------------------------------------------------|
 | POST   | `/images/upload/presign`  | Retorna uma URL pré-assinada para upload         |
 | GET    | `/images`                 | Lista imagens processadas com URLs do CloudFront |
+
+---
+
+### Tecnologias Utilizadas
+
+#### **Serviços AWS**
+- **S3** – Armazenamento principal para imagens originais e otimizadas
+- **Lambda** – Execução das funções de upload, compressão e listagem
+- **API Gateway** – Interface REST para comunicação com os serviços
+- **CloudFront** – CDN para entrega rápida de conteúdo
+- **DynamoDB** – Banco de dados NoSQL para metadados
+- **SQS** – Fila de mensagens para o processamento assíncrono
+
+#### **Infraestrutura**
+- **Terraform** – Provisionamento completo da infraestrutura AWS como código
+
+#### **Desenvolvimento**
+- **TypeScript** – Linguagem principal das funções Lambda
+- **Sharp** – Biblioteca de processamento e compressão de imagens
+- **AWS SDK v3** – Cliente modular para integração com os serviços AWS  
