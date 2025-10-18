@@ -2,47 +2,6 @@ provider "aws" {
   region = var.region
 }
 
-locals {
-  az_names        = slice(data.aws_availability_zones.available.names, 0, var.az_count)
-  public_subnets  = { for index, az in local.az_names : az => cidrsubnet(aws_vpc.image_pipeline_vpc.cidr_block, 8, index) }
-  private_subnets = { for index, az in local.az_names : az => cidrsubnet(aws_vpc.image_pipeline_vpc.cidr_block, 8, index + 8) }
-}
-
-data "aws_availability_zones" "available" {
-  region = var.region
-  state  = "available"
-}
-
-resource "aws_vpc" "image_pipeline_vpc" {
-  cidr_block = "10.0.0.0/16"
-
-  tags = {
-    Name = "Image Pipeline VPC"
-  }
-}
-
-resource "aws_subnet" "public" {
-  for_each          = local.public_subnets
-  vpc_id            = aws_vpc.image_pipeline_vpc.id
-  availability_zone = each.key
-  cidr_block        = each.value
-
-  tags = {
-    Name = "Public subnet ${each.value}"
-  }
-}
-
-resource "aws_subnet" "private" {
-  for_each          = local.private_subnets
-  vpc_id            = aws_vpc.image_pipeline_vpc.id
-  availability_zone = each.key
-  cidr_block        = each.value
-
-  tags = {
-    Name = "Private subnet ${each.value}"
-  }
-}
-
 resource "aws_sqs_queue" "create_thumbnail" {
   name = "create_thumbnail"
 }
