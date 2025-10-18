@@ -2,10 +2,22 @@ resource "aws_api_gateway_rest_api" "image_upload" {
   name = "image_upload_api"
 }
 
-resource "aws_api_gateway_resource" "upload" {
+resource "aws_api_gateway_resource" "images" {
   rest_api_id = aws_api_gateway_rest_api.image_upload.id
   parent_id   = aws_api_gateway_rest_api.image_upload.root_resource_id
+  path_part   = "images"
+}
+
+resource "aws_api_gateway_resource" "upload" {
+  rest_api_id = aws_api_gateway_rest_api.image_upload.id
+  parent_id   = aws_api_gateway_resource.images.id
   path_part   = "upload"
+}
+
+resource "aws_api_gateway_resource" "presign" {
+  rest_api_id = aws_api_gateway_rest_api.image_upload.id
+  parent_id   = aws_api_gateway_resource.upload.id
+  path_part   = "presign"
 }
 
 resource "aws_api_gateway_method" "upload" {
